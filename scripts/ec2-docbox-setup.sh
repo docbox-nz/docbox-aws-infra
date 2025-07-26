@@ -62,9 +62,9 @@ setup_docbox_service() {
     local TMP_SERVER_PATH="/tmp/docbox"
     local SERVER_PATH="/docbox/app"
 
-    # Download office converter server binary
-    echo "Downloading converter server"
-    curl -L -o $TMP_SERVER_PATH https://github.com/docbox-nz/docbox/releases/download/0.2.0/docbox-aarch64-linux-gnu
+    # Download docbox server binary
+    echo "Downloading docbox server"
+    curl -L -o $TMP_SERVER_PATH https://github.com/docbox-nz/docbox/releases/latest/download/docbox-aarch64-linux-gnu
 
     # Ensure the docbox directory exists
     sudo mkdir /docbox

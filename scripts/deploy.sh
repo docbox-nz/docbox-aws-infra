@@ -1,5 +1,5 @@
 # Extract EC2 instance IP from the terraform output
-EC2_HOST=admin@$(terraform -chdir=./terraform output -raw api_private_ip)
+EC2_HOST=admin@$(terraform output -raw api_private_ip)
 
 # Building binary
 BINARY_PATH="./target/aarch64-unknown-linux-musl/release/docbox"

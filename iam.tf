@@ -40,6 +40,8 @@ resource "aws_iam_policy" "docbox_secrets_manager_policy" {
         # Per tenant individual database user credentials
         "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:postgres/docbox/dev/*",
         "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:postgres/docbox/prod/*",
+        # Typesense credentials
+        "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:typesense/credentials/docbox*",
         # Root docbox database user credentials
         "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:postgres/docbox/config*",
       ]

@@ -2,6 +2,7 @@
   "ignoreWords": [],
   "words": [
     "docbox",
-    "typesense"
+    "typesense",
+    "LASTEXITCODE"
   ]
 }

@@ -15,3 +15,4 @@
 # Terraform backend config files
 *.tfbackend
 
+/private

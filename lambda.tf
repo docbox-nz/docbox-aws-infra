@@ -11,6 +11,15 @@ resource "aws_lambda_function" "office_converter" {
   timeout     = 60
   memory_size = 2048
 
+  environment {
+    variables = {
+        // Tell the converter to abort and kill the program if it
+        // spends longer than 55s trying to convert a file
+        // (Consider the program to have hanged)
+        "CONVERT_TIMEOUT_SECONDS" = "55"
+    }
+  }
+
   depends_on = [
     null_resource.trigger_cache_pull
   ]

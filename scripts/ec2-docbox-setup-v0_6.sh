@@ -10,11 +10,14 @@ PROXY_HOST="${proxy_host}"
 PROXY_PORT="${proxy_port}"
 PROXY_URL="http://$PROXY_HOST:$PROXY_PORT"
 
-# Configure APT to use proxy
+# Configure dnf and system to use proxy
 # (Will be required to reach the internet)
 configure_proxy() {
-    echo "Acquire::http::Proxy \"$PROXY_URL\";" >/etc/apt/apt.conf.d/95proxy
-    echo "Acquire::https::Proxy \"$PROXY_URL\";" >>/etc/apt/apt.conf.d/95proxy
+    if ! grep -q "^proxy=" /etc/dnf/dnf.conf 2>/dev/null; then
+        echo "proxy=$PROXY_URL" >> /etc/dnf/dnf.conf
+    else
+        sed -i "s|^proxy=.*|proxy=$PROXY_URL|" /etc/dnf/dnf.conf
+    fi
 
     # Set environment proxy variables for the session
     export http_proxy="$PROXY_URL"
@@ -50,11 +53,11 @@ set_timezone() {
 install_dependencies() {
     # Install updates
     echo "Installing updates"
-    sudo apt-get update
+    sudo dnf update -y
 
-    # Install poppler-utils
+    # Install poppler
     echo "Installing dependencies"
-    sudo apt-get install -y poppler-utils
+    sudo dnf install -y poppler poppler-utils poppler-data
 }
 
 # Create the docbox directory, download docbox binary and setup the docbox service
@@ -104,6 +107,31 @@ EOF
 
     # Start the services
     sudo systemctl start docbox.service
+
+    # Create updater script
+    cat <<EOF | sudo tee /docbox/update.sh >/dev/null
+TMP_SERVER_PATH="/tmp/docbox"
+SERVER_PATH="/docbox/app"
+SERVER_PATH_ALT="/docbox/app-previous"
+
+# Download office converter server binary
+curl -L -o \$TMP_SERVER_PATH https://github.com/docbox-nz/docbox/releases/latest/download/docbox-aarch64-linux-gnu
+
+# Move current docbox server binary
+sudo mv \$SERVER_PATH \$SERVER_PATH_ALT
+
+# Move the new docbox server binary
+sudo mv \$TMP_SERVER_PATH \$SERVER_PATH
+
+# Ensure the binary has execute permissions
+sudo chmod +x \$SERVER_PATH
+
+# Restart the service
+sudo systemctl restart docbox.service
+EOF
+
+    # Make updater script executable
+    sudo chmod +x /docbox/update.sh
 }
 
 # Setup a 1GB

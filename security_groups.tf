@@ -1,6 +1,6 @@
 # Security group for the docbox API EC2 instance
 #
-# Allows access from the VPN and gateway 
+# Allows access from the VPN and gateway
 resource "aws_security_group" "docbox_api_sg" {
   name        = "docbox-api-sg"
   description = "Security group for the docbox API EC2, allows access from VPN and gateway API"
@@ -23,7 +23,7 @@ resource "aws_security_group" "docbox_api_sg" {
   }
 
   # Allow ingres from 443 on the private subnet, used by AWS Secrets manager
-  # requests to the secrets manager will timeout without this 
+  # requests to the secrets manager will timeout without this
   ingress {
     from_port   = 443
     to_port     = 443
@@ -120,43 +120,3 @@ resource "aws_security_group" "docbox_typesense_sg" {
     Name = "docbox-typesense-sg"
   }
 }
-
-
-# Security group for the converter server
-resource "aws_security_group" "docbox_converter_sg" {
-  name        = "docbox-converter"
-  description = "Security group for docbox converter server"
-  vpc_id      = var.vpc_id
-
-  # Allow members of the private subnet access
-  ingress {
-    from_port = 8081
-    to_port   = 8081
-    protocol  = "tcp"
-    cidr_blocks = [
-      aws_subnet.private_subnet.cidr_block,
-    ]
-    description = "Access from private subnet services"
-  }
-
-  # Allow access through VPN
-  ingress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    security_groups = [var.vpn_security_group_id]
-    description     = "VPN all access"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "docbox-converter-sg"
-  }
-}
-

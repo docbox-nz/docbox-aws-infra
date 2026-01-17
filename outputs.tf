@@ -1,15 +1,9 @@
-
-
 # Get private IP of API EC2 instance for SSH
 output "api_private_ip" {
   value = aws_instance.api.private_ip
 }
 
-output "converter_private_ip" {
-  value = aws_instance.converter_api.private_ip
-}
-
-# Generated instance ID for the API EC2 instance 
+# Generated instance ID for the API EC2 instance
 output "api_instance_id" {
   value = aws_instance.api.id
 }
@@ -61,7 +55,7 @@ output "typesense_private_ip" {
   value = aws_instance.docbox_typesense.private_ip
 }
 
-# Generated instance ID for the API EC2 instance 
+# Generated instance ID for the API EC2 instance
 output "typesense_instance_id" {
   value = aws_instance.docbox_typesense.id
 }

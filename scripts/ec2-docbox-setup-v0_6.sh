@@ -25,13 +25,13 @@ configure_proxy() {
     export HTTP_PROXY="$PROXY_URL"
     export HTTPS_PROXY="$PROXY_URL"
 
-    # Make proxy settings persistent for all users
-    cat >>/etc/environment <<EOF
-http_proxy=$PROXY_URL
-https_proxy=$PROXY_URL
-HTTP_PROXY=$PROXY_URL
-HTTPS_PROXY=$PROXY_URL
-EOF
+#     # Make proxy settings persistent for all users
+#     cat >>/etc/environment <<EOF
+# http_proxy=$PROXY_URL
+# https_proxy=$PROXY_URL
+# HTTP_PROXY=$PROXY_URL
+# HTTPS_PROXY=$PROXY_URL
+# EOF
 }
 
 # Wait until the EC2 container has networking

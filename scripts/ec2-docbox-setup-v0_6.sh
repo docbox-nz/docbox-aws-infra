@@ -9,6 +9,10 @@
 PROXY_HOST="${proxy_host}"
 PROXY_PORT="${proxy_port}"
 PROXY_URL="http://$PROXY_HOST:$PROXY_PORT"
+SECRET_NAME="${secret_name}"
+
+# IP address for instance metadata services (IMDS)
+INSTANCE_METADATA_SERVICE_IP="169.254.169.254"
 
 # Configure dnf and system to use proxy
 # (Will be required to reach the internet)
@@ -25,13 +29,24 @@ configure_proxy() {
     export HTTP_PROXY="$PROXY_URL"
     export HTTPS_PROXY="$PROXY_URL"
 
-#     # Make proxy settings persistent for all users
-#     cat >>/etc/environment <<EOF
-# http_proxy=$PROXY_URL
-# https_proxy=$PROXY_URL
-# HTTP_PROXY=$PROXY_URL
-# HTTPS_PROXY=$PROXY_URL
-# EOF
+    # Ensure directory for override exists
+    sudo mkdir -p /etc/systemd/system/amazon-ssm-agent.service.d
+
+    # Create service override to proxy AWS SSM agent traffic through the proxy server
+    # (https://docs.aws.amazon.com/systems-manager/latest/userguide/configure-proxy-ssm-agent.html#ssm-agent-proxy-upstart)
+    echo "Setting up AWS SSM proxying"
+    cat <<EOF | sudo tee /etc/systemd/system/amazon-ssm-agent.service.d/override.conf >/dev/null
+[Service]
+Environment="http_proxy=$PROXY_URL"
+Environment="https_proxy=$PROXY_URL"
+Environment="no_proxy=$INSTANCE_METADATA_SERVICE_IP"
+EOF
+
+    # Reload systemd daemon
+    sudo systemctl daemon-reload
+
+    # Restart SSM agent for the new configuration
+    sudo systemctl restart amazon-ssm-agent
 }
 
 # Wait until the EC2 container has networking
@@ -132,6 +147,21 @@ EOF
 
     # Make updater script executable
     sudo chmod +x /docbox/update.sh
+}
+
+# Setup the .env file downloader script
+setup_env_script() {
+    # Create dotenv retrieval script
+    cat <<EOF | sudo tee /docbox/update_env.sh >/dev/null
+# Set the env file contents from the secret value
+aws secretsmanager get-secret-value \
+    --secret-id docbox-env-file \
+    --query SecretString \
+    --output text | sudo tee /docbox/.env >/dev/null
+EOF
+
+    # Make updater script executable
+    sudo chmod +x /docbox/update_env.sh
 }
 
 # Setup a 1GB

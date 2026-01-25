@@ -32,14 +32,14 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
 }
 
 resource "aws_vpc_endpoint" "lambda_endpoint" {
-    vpc_id            = var.vpc_id
-    service_name      = "com.amazonaws.${var.aws_region}.lambda"
-    vpc_endpoint_type = "Interface"
+  vpc_id            = var.vpc_id
+  service_name      = "com.amazonaws.${var.aws_region}.lambda"
+  vpc_endpoint_type = "Interface"
 
-    subnet_ids         = [aws_subnet.private_subnet.id]
-    security_group_ids = [aws_security_group.docbox_api_sg.id]
+  subnet_ids         = [aws_subnet.private_subnet.id]
+  security_group_ids = [aws_security_group.docbox_api_sg.id]
 
-    private_dns_enabled = true
+  private_dns_enabled = true
 }
 
 

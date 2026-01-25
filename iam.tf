@@ -21,6 +21,12 @@ resource "aws_iam_role" "docbox_role" {
   })
 }
 
+# Associate AmazonSSMManagedInstanceCore to allow the instance to be managed by AWS SSM
+resource "aws_iam_role_policy_attachment" "docbox_ssm_core" {
+  role       = aws_iam_role.docbox_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 # IAM Policy that allows the docbox role access to retrieve the following secrets:
 # - Docbox development postgres secrets
 # - Docbox production postgres secrets
@@ -44,6 +50,8 @@ resource "aws_iam_policy" "docbox_secrets_manager_policy" {
         "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:typesense/credentials/docbox*",
         # Root docbox database user credentials
         "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:postgres/docbox/config*",
+        # Docbox .env file secret
+        aws_secretsmanager_secret.docbox_env_secret.arn,
       ]
     }]
   })
@@ -227,4 +235,62 @@ resource "aws_iam_policy" "docbox_office_converter_invoke" {
 resource "aws_iam_role_policy_attachment" "docbox_office_converter_invoke" {
   role       = aws_iam_role.docbox_role.name
   policy_arn = aws_iam_policy.docbox_office_converter_invoke.arn
+}
+
+
+
+# Create instance profile to give the docbox typesense EC2 instance the "docbox_typesense" role
+resource "aws_iam_instance_profile" "docbox_typesense_instance_profile" {
+  name = "docbox_typesense_instance_profile"
+  role = aws_iam_role.docbox_typesense_role.name
+}
+
+# Role for the docbox typesense instance
+resource "aws_iam_role" "docbox_typesense_role" {
+  name = "docbox_typesense_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+# Associate AmazonSSMManagedInstanceCore to allow the instance to be managed by AWS SSM
+resource "aws_iam_role_policy_attachment" "docbox_typesense_ssm_core" {
+  role       = aws_iam_role.docbox_typesense_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# Create instance profile to give the docbox proxy EC2 instance the "docbox_proxy" role
+resource "aws_iam_instance_profile" "docbox_proxy_instance_profile" {
+  name = "docbox_proxy_instance_profile"
+  role = aws_iam_role.docbox_proxy_role.name
+}
+
+# Role for the docbox typesense instance
+resource "aws_iam_role" "docbox_proxy_role" {
+  name = "docbox_proxy_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+# Associate AmazonSSMManagedInstanceCore to allow the instance to be managed by AWS SSM
+resource "aws_iam_role_policy_attachment" "docbox_proxy_ssm_core" {
+  role       = aws_iam_role.docbox_proxy_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }

@@ -4,6 +4,9 @@ PROXY_PORT="${proxy_port}"
 PROXY_URL="http://$PROXY_HOST:$PROXY_PORT"
 TYPESENSE_API_KEY="${typesense_api_key}"
 
+# IP address for instance metadata services (IMDS)
+INSTANCE_METADATA_SERVICE_IP="169.254.169.254"
+
 # Configure APT to use proxy
 # (Will be required to reach the internet)
 configure_proxy() {
@@ -16,13 +19,24 @@ configure_proxy() {
     export HTTP_PROXY="$PROXY_URL"
     export HTTPS_PROXY="$PROXY_URL"
 
-    # Make proxy settings persistent for all users
-    cat >>/etc/environment <<EOF
-http_proxy=$PROXY_URL
-https_proxy=$PROXY_URL
-HTTP_PROXY=$PROXY_URL
-HTTPS_PROXY=$PROXY_URL
+    # Ensure directory for override exists
+    sudo mkdir -p /etc/systemd/system/snap.amazon-ssm-agent.amazon-ssm-agent.service.d
+
+    # Create service override to proxy AWS SSM agent traffic through the proxy server
+    # (https://docs.aws.amazon.com/systems-manager/latest/userguide/configure-proxy-ssm-agent.html#ssm-agent-proxy-upstart)
+    echo "Setting up AWS SSM proxying"
+    cat <<EOF | sudo tee /etc/systemd/system/snap.amazon-ssm-agent.amazon-ssm-agent.service.d/override.conf >/dev/null
+[Service]
+Environment="http_proxy=$PROXY_URL"
+Environment="https_proxy=$PROXY_URL"
+Environment="no_proxy=$INSTANCE_METADATA_SERVICE_IP"
 EOF
+
+    # Reload systemd daemon
+    sudo systemctl daemon-reload
+
+    # Restart SSM agent for the new configuration
+    sudo systemctl restart snap.amazon-ssm-agent.amazon-ssm-agent
 }
 
 # Wait until the EC2 container has networking

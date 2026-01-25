@@ -59,3 +59,8 @@ output "typesense_private_ip" {
 output "typesense_instance_id" {
   value = aws_instance.docbox_typesense.id
 }
+
+# Secret to store the environment variables in
+output "env_secret" {
+  value = aws_secretsmanager_secret.docbox_env_secret.name
+}

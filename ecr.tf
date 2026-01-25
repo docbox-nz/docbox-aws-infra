@@ -32,9 +32,9 @@ resource "null_resource" "trigger_cache_pull" {
       aws_region  = var.aws_region
       aws_profile = var.aws_profile
 
-      ecr_repo = aws_ecr_repository.docbox_ecr_private.repository_url
+      ecr_repo     = aws_ecr_repository.docbox_ecr_private.repository_url
       source_image = "${var.source_image_url}:${var.source_image_tag}"
-      dest_image = "${aws_ecr_repository.docbox_ecr_private.repository_url}:${var.source_image_tag}"
+      dest_image   = "${aws_ecr_repository.docbox_ecr_private.repository_url}:${var.source_image_tag}"
     })
 
     interpreter = local.is_windows ? ["PowerShell", "-Command"] : ["bash", "-c"]
@@ -44,7 +44,7 @@ resource "null_resource" "trigger_cache_pull" {
   # Re-run if the image tag or cache rule changes
   triggers = {
     image_ref   = "${var.source_image_url}:${var.source_image_tag}"
-    ecr_repo  = aws_ecr_repository.docbox_ecr_private.id
+    ecr_repo    = aws_ecr_repository.docbox_ecr_private.id
     script_hash = local.script_hash
   }
 }

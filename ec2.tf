@@ -27,6 +27,7 @@ resource "aws_instance" "api" {
   # Network security group
   vpc_security_group_ids = [aws_security_group.docbox_api_sg.id]
 
+  # Associate IAM role
   iam_instance_profile = aws_iam_instance_profile.docbox_instance_profile.name
 
   root_block_device {
@@ -41,8 +42,9 @@ resource "aws_instance" "api" {
 
   # Pass proxy details into setup script
   user_data = templatefile("./scripts/ec2-docbox-setup-v0_6.sh", {
-    proxy_host = aws_instance.http_proxy.private_ip
-    proxy_port = "3128"
+    proxy_host  = aws_instance.http_proxy.private_ip
+    proxy_port  = "3128"
+    secret_name = aws_secretsmanager_secret.docbox_env_secret.id
   })
 
 
@@ -81,6 +83,9 @@ resource "aws_instance" "docbox_typesense" {
 
   # SSH key access
   key_name = aws_key_pair.ssh_key.key_name
+
+  # Associate IAM role
+  iam_instance_profile = aws_iam_instance_profile.docbox_typesense_instance_profile.name
 
   # Pass proxy details into setup script
   user_data = templatefile("./scripts/ec2-typesense-setup.sh", {
@@ -122,8 +127,9 @@ resource "aws_instance" "http_proxy" {
   # Network security group
   vpc_security_group_ids = [aws_security_group.http_proxy_sg.id]
 
-  # SSH key access
-  key_name = aws_key_pair.ssh_key.key_name
+
+  # Associate IAM role
+  iam_instance_profile = aws_iam_instance_profile.docbox_proxy_instance_profile.name
 
   user_data = file("./scripts/ec2-proxy-setup.sh")
 

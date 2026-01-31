@@ -54,3 +54,8 @@ variable "public_subnet_cidr" {
   description = "CIDR block for the public subnet"
   type        = string
 }
+
+variable "db_resource_id" {
+  description = "Resource ID of the database (or cluster) for IAM rules"
+  type        = string
+}

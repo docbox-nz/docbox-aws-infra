@@ -129,6 +129,9 @@ TMP_SERVER_PATH="/tmp/docbox"
 SERVER_PATH="/docbox/app"
 SERVER_PATH_ALT="/docbox/app-previous"
 
+# Set HTTPS proxy before downloading update
+export HTTPS_PROXY="$PROXY_URL"
+
 # Download office converter server binary
 curl -L -o \$TMP_SERVER_PATH https://github.com/docbox-nz/docbox/releases/latest/download/docbox-aarch64-linux-gnu
 

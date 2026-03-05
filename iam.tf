@@ -92,6 +92,7 @@ resource "aws_iam_role_policy_attachment" "docbox_iam_rds_policy_attachment" {
 
 # IAM Policy that allows the docbox role to perform the following actions on S3 scoped to docbox-* buckets:
 # - Upload files
+# - Tag uploaded files
 # - Get files
 # - Delete files
 resource "aws_iam_policy" "docbox_s3_access_policy" {
@@ -106,6 +107,7 @@ resource "aws_iam_policy" "docbox_s3_access_policy" {
         Effect = "Allow"
         Action = [
           "s3:PutObject",
+          "s3:PutObjectTagging",
           "s3:GetObject",
           "s3:DeleteObject"
         ]

@@ -42,7 +42,7 @@ resource "aws_instance" "api" {
 
   # Pass proxy details into setup script
   user_data = templatefile("./scripts/ec2-docbox-setup-v0_6.sh", {
-    proxy_host  = aws_instance.http_proxy.private_ip
+    proxy_host  = module.http_proxy.private_ip
     proxy_port  = "3128"
     secret_name = aws_secretsmanager_secret.docbox_env_secret.id
   })
@@ -51,7 +51,7 @@ resource "aws_instance" "api" {
   # API must wait for the HTTP proxy to be fully initialized before
   # it can run so that it can use the HTTP proxy to install dependencies
   # (As it does not have regular network access since its in a private subnet)
-  depends_on = [aws_instance.http_proxy]
+  depends_on = [module.http_proxy]
 
   # Prevent replacement due to user_data changes
   lifecycle {
@@ -63,82 +63,95 @@ resource "aws_instance" "api" {
   }
 }
 
-# Generate a random API key for Typesense
-resource "random_password" "typesense_api_key" {
-  length  = 48
-  special = false
+
+
+module "http_proxy" {
+  source = "./modules/http_proxy"
+
+  instance_name         = "docbox-http-proxy"
+  instance_profile_name = "docbox_proxy_instance_profile"
+  iam_role_name         = "docbox_proxy_role"
+  security_group_name   = "docbox-http-proxy-sg"
+  vpc_id                = var.vpc_id
+  public_subnet_id      = aws_subnet.public_subnet.id
+  allowed_cidr_blocks = [
+    aws_subnet.private_subnet.cidr_block,
+  ]
+  full_access_security_groups = [var.vpn_security_group_id]
 }
 
-# Typesense
-#
-# Search index server instance
-resource "aws_instance" "docbox_typesense" {
-  // Canonical, Ubuntu, 24.04, arm64 noble image
-  ami           = "ami-099eeb58169040255"
-  instance_type = "t4g.small"
-  subnet_id     = aws_subnet.private_subnet.id
-
-  # Network security group
-  vpc_security_group_ids = [aws_security_group.docbox_typesense_sg.id]
-
-  # SSH key access
-  key_name = aws_key_pair.ssh_key.key_name
-
-  # Associate IAM role
-  iam_instance_profile = aws_iam_instance_profile.docbox_typesense_instance_profile.name
-
-  # Pass proxy details into setup script
-  user_data = templatefile("./scripts/ec2-typesense-setup.sh", {
-    proxy_host        = aws_instance.http_proxy.private_ip
-    proxy_port        = "3128",
-    typesense_api_key = random_password.typesense_api_key.result
-  })
-
-  # Disable running prolonged higher CPU speeds at a higher cost
-  credit_specification {
-    cpu_credits = "standard"
-  }
-
-  # Typesense must wait for the HTTP proxy to be fully initialized before
-  # it can run so that it can use the HTTP proxy to install dependencies
-  # (As it does not have regular network access since its in a private subnet)
-  depends_on = [aws_instance.http_proxy]
-
-  # Prevent replacement due to user_data changes
-  lifecycle {
-    ignore_changes = [user_data]
-  }
-
-  tags = {
-    Name = "docbox-typesense"
-  }
+moved {
+  from = aws_instance.http_proxy
+  to   = module.http_proxy.aws_instance.instance
 }
 
-# HTTP Squid Proxy
-#
-# Allows internal services from the private subnet to request HTTP
-# resources from the public internet
-resource "aws_instance" "http_proxy" {
-  # Amazon Linux 2023 AMI 2023.7.20250527.1 arm64 HVM kernel-6.1
-  ami           = "ami-0a06008c37dfe916b"
-  instance_type = "t4g.nano"
-  subnet_id     = aws_subnet.public_subnet.id
+moved {
+  from = aws_iam_instance_profile.docbox_proxy_instance_profile
+  to   = module.http_proxy.aws_iam_instance_profile.instance_profile
+}
 
-  # Network security group
-  vpc_security_group_ids = [aws_security_group.http_proxy_sg.id]
+moved {
+  from = aws_iam_role.docbox_proxy_role
+  to   = module.http_proxy.aws_iam_role.instance_role
+}
 
+moved {
+  from = aws_iam_role_policy_attachment.docbox_proxy_ssm_core
+  to   = module.http_proxy.aws_iam_role_policy_attachment.ssm_core_attachment
+}
 
-  # Associate IAM role
-  iam_instance_profile = aws_iam_instance_profile.docbox_proxy_instance_profile.name
+moved {
+  from = aws_security_group.http_proxy_sg
+  to   = module.http_proxy.aws_security_group.security_group
+}
 
-  user_data = file("./scripts/ec2-proxy-setup.sh")
+module "typesense" {
+  source = "./modules/typesense"
 
-  # Disable running prolonged higher CPU speeds at a higher cost
-  credit_specification {
-    cpu_credits = "standard"
-  }
+  proxy_host = module.http_proxy.private_ip
+  proxy_port = 3128
 
-  tags = {
-    Name = "docbox-http-proxy"
-  }
+  instance_name         = "docbox-typesense"
+  instance_role_name    = "docbox_typesense_role"
+  instance_profile_name = "docbox_typesense_instance_profile"
+  security_group_name   = "docbox-typesense"
+
+  ssh_key_name = aws_key_pair.ssh_key.key_name
+
+  vpc_id    = var.vpc_id
+  subnet_id = aws_subnet.private_subnet.id
+  allowed_cidr_blocks = [
+    aws_subnet.private_subnet.cidr_block,
+  ]
+  full_access_security_groups = [var.vpn_security_group_id]
+}
+
+moved {
+  from = random_password.typesense_api_key
+  to   = module.typesense.random_password.api_key
+}
+
+moved {
+  from = aws_instance.docbox_typesense
+  to   = module.typesense.aws_instance.instance
+}
+
+moved {
+  from = aws_iam_role.docbox_typesense_role
+  to   = module.typesense.aws_iam_role.instance_role
+}
+
+moved {
+  from = aws_iam_instance_profile.docbox_typesense_instance_profile
+  to   = module.typesense.aws_iam_instance_profile.instance_profile
+}
+
+moved {
+  from = aws_iam_role_policy_attachment.docbox_typesense_ssm_core
+  to   = module.typesense.aws_iam_role_policy_attachment.ssm_core_attachment
+}
+
+moved {
+  from = aws_security_group.docbox_typesense_sg
+  to   = module.typesense.aws_security_group.security_group
 }

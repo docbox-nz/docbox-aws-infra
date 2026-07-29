@@ -1,7 +1,7 @@
 # Lambda for performing office file conversion
 module "office_converter_lambda" {
   source  = "jacobtread/office-convert-lambda/aws"
-  version = "0.1.0"
+  version = "0.1.1"
 
   lambda_function_name      = "docbox-office-convert-lambda"
   lambda_role_name          = "docbox_office_converter_role"
@@ -22,7 +22,7 @@ module "office_converter_lambda" {
 
 moved {
   from = aws_lambda_function.office_converter
-  to   = module.office_converter_lambda.aws_lambda_function.this
+  to   = module.office_converter_lambda.aws_lambda_function.lambda
 }
 
 moved {

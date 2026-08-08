@@ -10,7 +10,7 @@ output "api_instance_id" {
 
 # Get the private IP for the HTTP proxy
 output "http_proxy_ip" {
-  value = aws_instance.http_proxy.private_ip
+  value = module.http_proxy.private_ip
 }
 
 # Role provided to the docbox instance
@@ -45,19 +45,18 @@ output "sqs_upload_queue_url" {
 
 # Output the API key (be careful with this in production)
 output "typesense_api_key" {
-  value     = random_password.typesense_api_key.result
+  value     = module.typesense.api_key
   sensitive = true
 }
 
-
 # Get private IP of API EC2 instance for SSH
 output "typesense_private_ip" {
-  value = aws_instance.docbox_typesense.private_ip
+  value = module.typesense.private_ip
 }
 
 # Generated instance ID for the API EC2 instance
 output "typesense_instance_id" {
-  value = aws_instance.docbox_typesense.id
+  value = module.typesense.instance_id
 }
 
 # Secret to store the environment variables in

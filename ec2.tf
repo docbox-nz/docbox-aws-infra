@@ -32,7 +32,7 @@ resource "aws_instance" "api" {
 
   root_block_device {
     volume_type = "gp3"
-    volume_size = 8
+    volume_size = var.api_storage_volume_size
   }
 
   # Disable running prolonged higher CPU speeds at a higher cost
@@ -98,6 +98,12 @@ resource "aws_instance" "docbox_typesense" {
   credit_specification {
     cpu_credits = "standard"
   }
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = var.typesense_storage_volume_size
+  }
+
 
   # Typesense must wait for the HTTP proxy to be fully initialized before
   # it can run so that it can use the HTTP proxy to install dependencies

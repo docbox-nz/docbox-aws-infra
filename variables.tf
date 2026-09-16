@@ -35,10 +35,22 @@ variable "api_instance_type" {
   type        = string
 }
 
+variable "api_storage_volume_size" {
+  description = "Storage volume size in GB for typesense"
+  type        = number
+  default     = 8
+}
+
 variable "typesense_instance_type" {
   description = "AWS instance class for the API EC2 server"
   type        = string
   default     = "t4g.small"
+}
+
+variable "typesense_storage_volume_size" {
+  description = "Storage volume size in GB for typesense"
+  type        = number
+  default     = 32
 }
 
 variable "vpc_id" {

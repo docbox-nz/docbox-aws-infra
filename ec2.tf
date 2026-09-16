@@ -75,7 +75,7 @@ resource "random_password" "typesense_api_key" {
 resource "aws_instance" "docbox_typesense" {
   // Canonical, Ubuntu, 24.04, arm64 noble image
   ami           = "ami-099eeb58169040255"
-  instance_type = "t4g.small"
+  instance_type = var.typesense_instance_type
   subnet_id     = aws_subnet.private_subnet.id
 
   # Network security group

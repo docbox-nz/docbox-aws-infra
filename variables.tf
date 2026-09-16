@@ -35,6 +35,12 @@ variable "api_instance_type" {
   type        = string
 }
 
+variable "typesense_instance_type" {
+  description = "AWS instance class for the API EC2 server"
+  type        = string
+  default     = "t4g.small"
+}
+
 variable "vpc_id" {
   description = "ID of the VPC to allocate resources within"
   type        = string

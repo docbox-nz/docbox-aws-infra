@@ -56,8 +56,12 @@ variable "full_access_security_groups" {
   default     = []
 }
 
-
 variable "subnet_id" {
   type        = string
   description = "ID of the subnet to store the instance within, should be a private subnet"
+}
+
+variable "volume_size" {
+  type    = number
+  default = 32
 }

@@ -1,11 +1,11 @@
 # Get private IP of API EC2 instance for SSH
 output "api_private_ip" {
-  value = aws_instance.api.private_ip
+  value = module.docbox.private_ip
 }
 
 # Generated instance ID for the API EC2 instance
 output "api_instance_id" {
-  value = aws_instance.api.id
+  value = module.docbox.api_instance_id
 }
 
 # Get the private IP for the HTTP proxy
@@ -15,12 +15,12 @@ output "http_proxy_ip" {
 
 # Role provided to the docbox instance
 output "docbox_role" {
-  value = aws_iam_role.docbox_role.id
+  value = module.docbox.role_arn
 }
 
 # ID for the docbox API security group
 output "docbox_api_sg" {
-  value = aws_security_group.docbox_api_sg.id
+  value = module.docbox.api_sg_id
 }
 
 # CIDR for the public subnet
@@ -61,5 +61,5 @@ output "typesense_instance_id" {
 
 # Secret to store the environment variables in
 output "env_secret" {
-  value = aws_secretsmanager_secret.docbox_env_secret.name
+  value = module.docbox.env_secret_name
 }

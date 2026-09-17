@@ -14,7 +14,7 @@ resource "aws_vpc_endpoint" "secrets_endpoint" {
   vpc_endpoint_type = "Interface"
 
   subnet_ids         = [aws_subnet.private_subnet.id]
-  security_group_ids = [aws_security_group.docbox_api_sg.id]
+  security_group_ids = [module.docbox.api_sg_id]
 
   private_dns_enabled = true
 }
@@ -26,7 +26,7 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
   vpc_endpoint_type = "Interface"
 
   subnet_ids         = [aws_subnet.private_subnet.id]
-  security_group_ids = [aws_security_group.docbox_api_sg.id]
+  security_group_ids = [module.docbox.api_sg_id]
 
   private_dns_enabled = true
 }
@@ -37,7 +37,7 @@ resource "aws_vpc_endpoint" "lambda_endpoint" {
   vpc_endpoint_type = "Interface"
 
   subnet_ids         = [aws_subnet.private_subnet.id]
-  security_group_ids = [aws_security_group.docbox_api_sg.id]
+  security_group_ids = [module.docbox.api_sg_id]
 
   private_dns_enabled = true
 }

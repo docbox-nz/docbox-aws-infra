@@ -39,6 +39,11 @@ resource "aws_instance" "instance" {
     typesense_api_key = random_password.api_key.result
   })
 
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = var.volume_size
+  }
+
   # Disable running prolonged higher CPU speeds at a higher cost
   credit_specification {
     cpu_credits = "standard"

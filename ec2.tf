@@ -8,75 +8,113 @@ resource "aws_key_pair" "ssh_key" {
   }
 }
 
-# Docbox API server EC2
-#
-# This instance will run:
-# - The docbox API HTTP server
-#
-# (https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/instance)
-resource "aws_instance" "api" {
-  # Amazon Linux 2023 AMI 2023.10.20260105.0 arm64 HVM kernel-6.1
-  ami           = "ami-0727d44a1158304d8"
-  instance_type = var.api_instance_type
+module "docbox" {
+  source = "./modules/docbox"
 
-  subnet_id = aws_subnet.private_subnet.id
+  proxy_host = module.http_proxy.private_ip
+  proxy_port = 3128
 
-  # SSH key access
-  key_name = aws_key_pair.ssh_key.key_name
+  instance_name              = "docbox-api-v0_6"
+  iam_role_name              = "docbox_role"
+  security_group_name        = "docbox-api-sg"
+  s3_access_policy_name      = "docbox_s3_access_policy"
+  secrets_access_policy_name = "docbox_secrets_access_policy"
+  env_secret_name            = "docbox-env-file"
 
-  # Network security group
-  vpc_security_group_ids = [aws_security_group.docbox_api_sg.id]
+  ssh_key_name = aws_key_pair.ssh_key.key_name
 
-  # Associate IAM role
-  iam_instance_profile = aws_iam_instance_profile.docbox_instance_profile.name
+  vpc_id                      = var.vpc_id
+  subnet_id                   = aws_subnet.private_subnet.id
+  allowed_cidr_blocks         = [aws_subnet.private_subnet.cidr_block]
+  full_access_security_groups = [var.vpn_security_group_id]
 
-  root_block_device {
-    volume_type = "gp3"
-    volume_size = 8
-  }
-
-  # Disable running prolonged higher CPU speeds at a higher cost
-  credit_specification {
-    cpu_credits = "standard"
-  }
-
-  # Pass proxy details into setup script
-  user_data = templatefile("./scripts/ec2-docbox-setup-v0_6.sh", {
-    proxy_host  = module.http_proxy.private_ip
-    proxy_port  = "3128"
-    secret_name = aws_secretsmanager_secret.docbox_env_secret.id
-  })
-
-
-  # API must wait for the HTTP proxy to be fully initialized before
-  # it can run so that it can use the HTTP proxy to install dependencies
-  # (As it does not have regular network access since its in a private subnet)
-  depends_on = [module.http_proxy]
-
-  # Prevent replacement due to user_data changes
-  lifecycle {
-    ignore_changes = [user_data]
-  }
-
-  tags = {
-    Name = "docbox-api-v0_6"
+  additional_policy_arns = {
+    "rds"                     = aws_iam_policy.docbox_iam_rds_policy.arn,
+    "sqs_read"                = aws_iam_policy.docbox_sqs_read.arn,
+    "office_converter_bucket" = module.office_converter_lambda.bucket_access_policy_arn,
+    "office_converter_lambda" = module.office_converter_lambda.invoke_policy_arn
   }
 }
 
+moved {
+  from = aws_instance.api
+  to   = module.docbox.aws_instance.api
+}
 
+moved {
+  from = aws_secretsmanager_secret.docbox_env_secret
+  to   = module.docbox.aws_secretsmanager_secret.docbox_env_secret
+}
+
+moved {
+  from = aws_security_group.docbox_api_sg
+  to   = module.docbox.aws_security_group.docbox_api_sg
+}
+
+moved {
+  from = aws_iam_role.docbox_role
+  to   = module.docbox.aws_iam_role.docbox_role
+}
+
+moved {
+  from = aws_iam_instance_profile.docbox_instance_profile
+  to   = module.docbox.aws_iam_instance_profile.docbox_instance_profile
+}
+
+moved {
+  from = aws_iam_role_policy_attachment.docbox_ssm_core
+  to   = module.docbox.aws_iam_role_policy_attachment.docbox_ssm_core
+}
+
+moved {
+  from = aws_iam_policy.docbox_secrets_manager_policy
+  to   = module.docbox.aws_iam_policy.docbox_secrets_manager_policy
+}
+moved {
+  from = aws_iam_role_policy_attachment.additional
+  to   = module.docbox.aws_iam_role_policy_attachment.additional
+}
+
+moved {
+  from = aws_iam_policy.docbox_s3_access_policy
+  to   = module.docbox.aws_iam_policy.docbox_s3_access_policy
+}
+
+moved {
+  from = aws_iam_role_policy_attachment.docbox_s3_access_attachment
+  to   = module.docbox.aws_iam_role_policy_attachment.docbox_s3_access_attachment
+}
+
+moved {
+  from = aws_iam_role_policy_attachment.docbox_iam_rds_policy_attachment
+  to   = module.docbox.aws_iam_role_policy_attachment.additional["rds"]
+}
+
+moved {
+  from = aws_iam_role_policy_attachment.docbox_role_sqs_policy
+  to   = module.docbox.aws_iam_role_policy_attachment.additional["sqs_read"]
+}
+
+moved {
+  from = aws_iam_role_policy_attachment.docbox_role_converter_s3_access
+  to   = module.docbox.aws_iam_role_policy_attachment.additional["office_converter_bucket"]
+}
+
+moved {
+  from = aws_iam_role_policy_attachment.docbox_office_converter_invoke
+  to   = module.docbox.aws_iam_role_policy_attachment.additional["office_converter_lambda"]
+}
 
 module "http_proxy" {
   source = "./modules/http_proxy"
 
-  instance_name         = "docbox-http-proxy"
-  instance_profile_name = "docbox_proxy_instance_profile"
-  iam_role_name         = "docbox_proxy_role"
-  security_group_name   = "docbox-http-proxy-sg"
-  vpc_id                = var.vpc_id
-  public_subnet_id      = aws_subnet.public_subnet.id
-  allowed_cidr_blocks = [
-    aws_subnet.private_subnet.cidr_block,
-  ]
+  instance_name               = "docbox-http-proxy"
+  instance_profile_name       = "docbox_proxy_instance_profile"
+  iam_role_name               = "docbox_proxy_role"
+  security_group_name         = "docbox-http-proxy-sg"
+  vpc_id                      = var.vpc_id
+  public_subnet_id            = aws_subnet.public_subnet.id
+  allowed_cidr_blocks         = [aws_subnet.private_subnet.cidr_block]
   full_access_security_groups = [var.vpn_security_group_id]
 }
 

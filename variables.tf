@@ -30,11 +30,6 @@ variable "ssh_private_key_path" {
   type        = string
 }
 
-variable "api_instance_type" {
-  description = "AWS instance class for the API EC2 server"
-  type        = string
-}
-
 variable "vpc_id" {
   description = "ID of the VPC to allocate resources within"
   type        = string
@@ -58,4 +53,33 @@ variable "public_subnet_cidr" {
 variable "db_resource_id" {
   description = "Resource ID of the database (or cluster) for IAM rules"
   type        = string
+}
+
+
+variable "api_instance_type" {
+  description = "AWS instance class for the API EC2 server"
+  type        = string
+  default     = "t4g.nano"
+}
+
+variable "http_proxy_instance_type" {
+  description = "AWS instance class for the HTTP Proxy EC2 server"
+  type        = string
+  default     = "t4g.nano"
+}
+
+variable "api_storage_volume_size" {
+  type    = number
+  default = 8
+}
+
+variable "typesense_instance_type" {
+  description = "Instance type for the typesense instance"
+  type        = string
+  default     = "t4g.small"
+}
+
+variable "typesense_storage_volume_size" {
+  type    = number
+  default = 32
 }

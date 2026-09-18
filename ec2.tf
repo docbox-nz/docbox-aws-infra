@@ -14,6 +14,7 @@ module "docbox" {
   proxy_host = module.http_proxy.private_ip
   proxy_port = 3128
 
+  instance_type              = var.api_instance_type
   instance_name              = "docbox-api-v0_6"
   iam_role_name              = "docbox_role"
   security_group_name        = "docbox-api-sg"
@@ -25,7 +26,7 @@ module "docbox" {
 
   vpc_id                      = var.vpc_id
   subnet_id                   = aws_subnet.private_subnet.id
-  allowed_cidr_blocks         = [aws_subnet.private_subnet.cidr_block]
+  allowed_cidr_blocks         = [var.vpc_cidr]
   full_access_security_groups = [var.vpn_security_group_id]
 
   additional_policy_arns = {
@@ -34,6 +35,8 @@ module "docbox" {
     "office_converter_bucket" = module.office_converter_lambda.bucket_access_policy_arn,
     "office_converter_lambda" = module.office_converter_lambda.invoke_policy_arn
   }
+
+  volume_size = var.api_storage_volume_size
 }
 
 moved {
@@ -43,7 +46,7 @@ moved {
 
 moved {
   from = aws_secretsmanager_secret.docbox_env_secret
-  to   = module.docbox.aws_secretsmanager_secret.docbox_env_secret
+  to   = module.docbox.aws_secretsmanager_secret.env_secret
 }
 
 moved {
@@ -86,6 +89,11 @@ moved {
 }
 
 moved {
+  from = aws_iam_role_policy_attachment.docbox_secrets_manager_policy_attachment
+  to   = module.docbox.aws_iam_role_policy_attachment.docbox_secrets_manager_policy_attachment
+}
+
+moved {
   from = aws_iam_role_policy_attachment.docbox_iam_rds_policy_attachment
   to   = module.docbox.aws_iam_role_policy_attachment.additional["rds"]
 }
@@ -108,6 +116,7 @@ moved {
 module "http_proxy" {
   source = "./modules/http_proxy"
 
+  instance_type               = var.http_proxy_instance_type
   instance_name               = "docbox-http-proxy"
   instance_profile_name       = "docbox_proxy_instance_profile"
   iam_role_name               = "docbox_proxy_role"
@@ -116,6 +125,7 @@ module "http_proxy" {
   public_subnet_id            = aws_subnet.public_subnet.id
   allowed_cidr_blocks         = [aws_subnet.private_subnet.cidr_block]
   full_access_security_groups = [var.vpn_security_group_id]
+
 }
 
 moved {
@@ -149,6 +159,7 @@ module "typesense" {
   proxy_host = module.http_proxy.private_ip
   proxy_port = 3128
 
+  instance_type         = var.typesense_instance_type
   instance_name         = "docbox-typesense"
   instance_role_name    = "docbox_typesense_role"
   instance_profile_name = "docbox_typesense_instance_profile"
@@ -162,6 +173,8 @@ module "typesense" {
     aws_subnet.private_subnet.cidr_block,
   ]
   full_access_security_groups = [var.vpn_security_group_id]
+
+  volume_size = var.typesense_storage_volume_size
 }
 
 moved {

@@ -1,3 +1,6 @@
+locals {
+  rds_db_user_prefix = "arn:aws:rds-db:${var.aws_region}:${data.aws_caller_identity.current.account_id}:dbuser:${var.db_resource_id}"
+}
 
 # IAM Policy that allows the docbox role to connect to the docbox databases
 resource "aws_iam_policy" "docbox_iam_rds_policy" {
@@ -11,10 +14,10 @@ resource "aws_iam_policy" "docbox_iam_rds_policy" {
       Action = "rds-db:connect"
       Resource = [
         # Root database role access
-        "arn:aws:rds-db:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:dbuser:${var.db_resource_id}/docbox_config_api",
+        "${local.rds_db_user_prefix}/docbox_config_api",
         # Tenant wildcard database roles access
-        "arn:aws:rds-db:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:dbuser:${var.db_resource_id}/docbox_*_dev_api",
-        "arn:aws:rds-db:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:dbuser:${var.db_resource_id}/docbox_*_prod_api",
+        "${local.rds_db_user_prefix}/docbox_*_dev_api",
+        "${local.rds_db_user_prefix}/docbox_*_prod_api",
       ]
     }]
   })

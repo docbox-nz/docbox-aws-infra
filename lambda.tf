@@ -54,6 +54,10 @@ moved {
   from = aws_iam_policy.docbox_office_converter_invoke
   to   = module.office_converter_lambda.aws_iam_policy.invoke
 }
+moved {
+  from = aws_iam_policy.docbox_office_converter_s3_access_policy
+  to   = module.office_converter_lambda.aws_iam_policy.bucket_access
+}
 
 moved {
   from = aws_s3_bucket.docbox_office_converter_bucket
